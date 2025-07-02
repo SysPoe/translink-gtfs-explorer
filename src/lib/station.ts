@@ -3,6 +3,7 @@ import * as gtfs from 'gtfs';
 import { timeSecs } from './utils/time';
 import findExpress from './utils/express';
 import runGuru from './runGuru';
+import { getTripUpdates, getStopTimeUpdates } from 'gtfs';
 
 let trips: gtfs.Trip[];
 let stopTimes: gtfs.StopTime[];
@@ -68,7 +69,12 @@ export async function getDepartures(
 		.filter((v) => (timeSecs(v.departure_time || '00:00:00') || 0) >= (timeSecs(start_time) || 0))
 		.filter((v) => (timeSecs(v.departure_time || '00:00:00') || 0) <= (timeSecs(end_time) || 0))
 		.filter((v) => v.trip_id.includes('-QR '))
-		.sort((a, b) => (a.arrival_timestamp || 0) - (b.arrival_timestamp || 0));
+		.sort(
+			(a, b) =>
+				(timeSecs(a.departure_time || '00:00:00') || 0) +
+				(a.departure_delay || 0) -
+				((timeSecs(b.departure_time || '00:00:00') || 0) + (b.departure_delay || 0))
+		);
 
 	const tripIds = [...new Set(stopTimes.map((v) => v.trip_id))];
 	const trips: { [trip_id: string]: gtfs.Trip } = {};
@@ -154,5 +160,117 @@ export async function getDepartures(
 		expressInfos[id] = expressInfo;
 	}
 
-	return { stopTimes, trips, stops, routes, runGurus, expressInfos };
+	const tripUpdates = getTripUpdates();
+	const stopTimeUpdates = getStopTimeUpdates();
+
+	for (const stopTime of stopTimes) {
+		const tripUpdate = tripUpdates.find((tu) => tu.trip_id === stopTime.trip_id);
+		if (tripUpdate) {
+			if (tripUpdate.schedule_relationship === 'SKIPPED') {
+				stopTime.schedule_relationship = 'SKIPPED';
+			} else {
+				let bestStopTimeUpdate: gtfs.StopTimeUpdate | undefined;
+				let bestMatchScore = -1; // Higher score means better match
+
+				for (const stu of stopTimeUpdates) {
+					if (stu.trip_id !== stopTime.trip_id) continue;
+
+					let currentMatchScore = 0;
+
+					// Score for stop_id match
+					if (stu.stop_id === stopTime.stop_id) {
+						currentMatchScore += 10; // High score for direct stop_id match
+					} else {
+						// Check for parent_station match (platform change)
+						const currentStopParent = stops[stopTime.stop_id]?.parent_station;
+						const updateStopParent = stops[stu.stop_id]?.parent_station;
+						if (currentStopParent && updateStopParent && currentStopParent === updateStopParent) {
+							currentMatchScore += 5; // Medium score for parent_station match
+						}
+					}
+
+					// Score for stop_sequence match
+					if (stu.stop_sequence === stopTime.stop_sequence) {
+						currentMatchScore += 2; // Lower score, as sequence can change
+					} else if (stu.stop_sequence && stopTime.stop_sequence) {
+						// If sequence doesn't match, but both exist, penalize slightly
+						currentMatchScore -= 1;
+					}
+
+					// If we have a better match, update bestStopTimeUpdate
+					if (currentMatchScore > bestMatchScore) {
+						bestMatchScore = currentMatchScore;
+						bestStopTimeUpdate = stu;
+					}
+				}
+
+				if (bestStopTimeUpdate && bestMatchScore > 0) {
+					// Only apply if a positive match score
+					stopTime.arrival_delay = bestStopTimeUpdate.arrival_delay;
+					stopTime.departure_delay = bestStopTimeUpdate.departure_delay;
+					// Add schedule_relationship
+					if (bestStopTimeUpdate.schedule_relationship) {
+						stopTime.schedule_relationship = bestStopTimeUpdate.schedule_relationship;
+					}
+				}
+			}
+		}
+		for (const tripUpdate of tripUpdates) {
+			// Ensure schedule_relationship exists and is either NEW or REPLACEMENT
+			if (
+				(tripUpdate.schedule_relationship === 'NEW' ||
+					tripUpdate.schedule_relationship === 'REPLACEMENT') &&
+				tripUpdate.stop_time_update
+			) {
+				for (const stu of tripUpdate.stop_time_update) {
+					if (stu.stop_id === stop_id || children.includes(stu.stop_id || '')) {
+						const newStopTime: any = {
+							trip_id: tripUpdate.trip_id,
+							stop_id: stu.stop_id,
+							stop_sequence: stu.stop_sequence,
+							arrival_time: stu.arrival?.time
+								? new Date(stu.arrival.time * 1000).toTimeString().slice(0, 8)
+								: undefined,
+							departure_time: stu.departure?.time
+								? new Date(stu.departure.time * 1000).toTimeString().slice(0, 8)
+								: undefined,
+							arrival_delay: stu.arrival?.delay,
+							departure_delay: stu.departure?.delay,
+							schedule_relationship: tripUpdate.schedule_relationship
+						};
+						stopTimes.push(newStopTime);
+
+						// Add trip and route info if not already present
+						if (!trips[tripUpdate.trip_id]) {
+							trips[tripUpdate.trip_id] = gtfs.getTrips({ trip_id: tripUpdate.trip_id })[0];
+							if (trips[tripUpdate.trip_id] && !routes[trips[tripUpdate.trip_id].route_id]) {
+								routes[trips[tripUpdate.trip_id].route_id] = gtfs.getRoutes({
+									route_id: trips[tripUpdate.trip_id].route_id
+								})[0];
+							}
+						}
+						if (!runGurus[tripUpdate.trip_id]) {
+							runGurus[tripUpdate.trip_id] = runGuru(tripUpdate.trip_id.slice(-4));
+						}
+						// Express info for new trips might need to be calculated or handled differently if it's not in the static GTFS
+						// For now, we'll leave it as is, it might be empty for new trips.
+					}
+				}
+			}
+		}
+
+		stopTimes = stopTimes.sort(
+			(a, b) =>
+				(a.departure_timestamp !== undefined
+					? a.departure_timestamp
+					: timeSecs(a.departure_time || '00:00:00')) +
+				(a.departure_delay || 0) -
+				((b.departure_timestamp !== undefined
+					? b.departure_timestamp
+					: timeSecs(b.departure_time || '00:00:00')) +
+					(b.departure_delay || 0))
+		);
+
+		return { stopTimes, trips, stops, routes, runGurus, expressInfos };
+	}
 }
