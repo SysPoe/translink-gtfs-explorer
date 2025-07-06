@@ -1,5 +1,8 @@
 import * as gtfs from 'gtfs';
 import fs from 'fs';
+import cron from 'node-cron';
+import os from 'os';
+import { DateTime } from 'luxon';
 
 let config = {
 	agencies: [
@@ -80,6 +83,31 @@ export function getStopTimes(): gtfs.StopTime[] {
 
 	return stopTimes;
 }
+
+// Detect system timezone
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+console.log('Detected system timezone:', tz);
+
+// Calculate the local time (system timezone) that matches 3am UTC+10
+function getLocalHourForUTCPlus10(hour = 3) {
+	// 3am UTC+10 in UTC
+	const utcPlus10 = DateTime.utc().set({ hour: hour, minute: 0, second: 0, millisecond: 0 });
+	// Shift to UTC+10
+	const utcTime = utcPlus10.minus({ hours: 10 });
+	// Convert to system timezone
+	const localTime = utcTime.setZone(tz);
+	return localTime.hour;
+}
+
+const localHour = getLocalHourForUTCPlus10(3);
+console.log(`Scheduling GTFS refresh at local hour ${localHour} to match 3am UTC+10`);
+
+// Schedule at calculated local hour
+cron.schedule(`0 ${localHour} * * *`, async () => {
+	console.log('Scheduled GTFS refresh to match 3am UTC+10');
+	loaded = false;
+	await loadGTFS(true);
+}, { timezone: tz });
 
 export default {
 	loadGTFS,
