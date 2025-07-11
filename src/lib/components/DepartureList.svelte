@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { routeAttributes } from 'gtfs/models';
 	import type { Trip, Route, Stop, TripUpdate, StopTimeUpdate, StopTime } from 'gtfs';
 
 	export let tripUpdates: Record<string, TripUpdate>;
@@ -23,6 +22,25 @@
 
 	function round(num: number): number {
 		return num < 0 ? -Math.ceil(-num) : Math.floor(num);
+	}
+
+	function formatDelayString(delay: number): string {
+		const absDelay = Math.abs(delay);
+		const hours = Math.floor(absDelay / 60);
+		const minutes = absDelay % 60;
+		let str = '';
+		if (hours > 0) {
+			str += `${hours}h`;
+			if (minutes > 0) str += ` ${minutes}m`;
+		} else {
+			str += `${minutes}m`;
+		}
+		if (delay > 0) {
+			str += ' late';
+		} else if (delay < 0) {
+			str += ' early';
+		}
+		return `(${str.trim()})`;
 	}
 </script>
 
@@ -49,14 +67,25 @@
 		{formatTime(dep.arrival_time)} p{stop.platform_code}
 	{/if}
 
-	- <a href="/trip/{trip.trip_id}">{trip.trip_id.slice(-4)}</a>
-	{route.route_short_name}
-	{(trip.trip_headsign || 'unknown').replace('station', '').trim()}
+	- <a href="/trip/{trip.trip_id}">{trip.trip_id.slice(-4)}</a> to {(
+		trip.trip_headsign || 'unknown'
+	)
+		.replace('station', '')
+		.trim()}
+	({route.route_short_name})
 	{#if dep.drop_off_type == 1}
 		(No Drop Off)
+	{:else if dep.drop_off_type == 2}
+		(Phone Agency to Arrange Drop Off)
+	{:else if dep.drop_off_type == 3}
+		(Coordinate with Driver for Drop Off)
 	{/if}
 	{#if dep.pickup_type == 1}
 		(No Pickup)
+	{:else if dep.pickup_type == 2}
+		(Phone Agency to Arrange Pickup)
+	{:else if dep.pickup_type == 3}
+		(Coordinate with Driver for Pickup)
 	{/if}
 	<br />
 
@@ -67,14 +96,12 @@
 				{@const stUpdate = stopTimeUpdates[dep.trip_id]}
 				{@const delay = round((stUpdate.departure_delay || 0) / 60)}
 
-				{#if delay > 5}
-					<span class="delay late">({delay}m late)</span>
-				{:else if delay > 0}
-					<span class="delay sorta-late">({delay}m late)</span>
+				{#if delay > 0}
+					<span class="delay {delay > 5 ? 'late' : 'sorta-late'}">{formatDelayString(delay)}</span>
 				{:else if delay == 0}
 					<span class="delay ontime">(on time)</span>
 				{:else if delay < 0}
-					<span class="delay early">({delay}m early)</span>
+					<span class="delay early">{formatDelayString(delay)}</span>
 				{/if}
 			{:else}
 				<span class="delay scheduled">(scheduled)</span>
@@ -90,17 +117,9 @@
 {/each}
 
 <style>
-	ul {
-		list-style: none;
-		padding: 0;
-	}
-
-	li {
-		padding: 8px 0;
-	}
-
 	.delay {
-		font-size: 0.8em;
+		font-size: 0.75em;
+		font-weight: bold;
 	}
 
 	.scheduled {
@@ -129,7 +148,7 @@
 	}
 
 	.delay-column {
-		width: 100px;
+		width: 115px;
 		flex-shrink: 0;
 	}
 </style>
