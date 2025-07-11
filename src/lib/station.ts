@@ -113,5 +113,21 @@ export async function getDepartures(
 		expressInfos[id] = expressInfo;
 	}
 
-	return { stopTimes, trips, stops, routes, runGurus, expressInfos };
+	const _tripUpdates = gtfs.getTripUpdates().filter((v) => tripIds.includes(v.trip_id || ''));
+	const _stopTimeUpdates = gtfs
+		.getStopTimeUpdates()
+		.filter((v) => v.stop_id == stop_id || children.includes(v.stop_id || ''))
+		.filter((v) => tripIds.includes(v.trip_id || ''));
+	const tripUpdates: { [trip_id: string]: gtfs.TripUpdate } = {};
+	for (const update of _tripUpdates) {
+		if (!update.trip_id) continue;
+		tripUpdates[update.trip_id] = update;
+	}
+	const stopTimeUpdates: { [trip_id: string]: gtfs.StopTimeUpdate } = {};
+	for (const update of _stopTimeUpdates) {
+		if (!update.trip_id) continue;
+		stopTimeUpdates[update.trip_id] = update;
+	}
+
+	return { stopTimes, trips, stops, routes, runGurus, expressInfos, tripUpdates, stopTimeUpdates };
 }
