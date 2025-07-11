@@ -59,5 +59,5 @@ export default function runGuru(trainNumber: string) {
 	const first: string = data.first[firstChar];
 	const second: string = data.second[secondChar];
 
-	return `${first} heading ${second ? (second.includes(' to ') ? '' : 'to') : 'to'} ${second}.`;
+	return `${first} heading ${second ? (second.includes(' to ') || /^(beyond|from|between)/.test(second) ? '' : 'to') : 'to'} ${second}.`;
 }
