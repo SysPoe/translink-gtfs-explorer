@@ -60,14 +60,33 @@ export async function getDepartures(
 	start_time: string,
 	end_time: string
 ) {
+	let today = Number.parseInt(
+		new Date(Date.now() + 60 * 60 * 10 * 1000).toISOString().slice(0, 10).replace(/-/g, '')
+	);
+
 	const children = gtfs.getStops({ parent_station: stop_id }).map((v) => v.stop_id);
 	let stopTimes: gtfs.StopTime[] = gtfs.getStoptimes({ stop_id, date });
 	for (const c of children) stopTimes = stopTimes.concat(gtfs.getStoptimes({ stop_id: c, date }));
 
 	stopTimes = stopTimes
-		.filter((v) => (timeSecs(v.departure_time || '00:00:00') || 0) >= (timeSecs(start_time) || 0))
-		.filter((v) => (timeSecs(v.departure_time || '00:00:00') || 0) <= (timeSecs(end_time) || 0))
 		.filter((v) => v.trip_id.includes('-QR '))
+		.filter((v) => {
+			let update = gtfs
+				.getStopTimeUpdates({ trip_id: v.trip_id })
+				.filter((v) => children.includes(v.stop_id || '') || v.stop_id == stop_id)[0];
+			let t = timeSecs(v.departure_time || '00:00:00') || 0;
+			t =
+				(date == today && update
+					? update.departure_timestamp
+						? timeSecs(
+								new Date(update.departure_timestamp * 1000 + 10 * 3600_000)
+									.toISOString()
+									.slice(11, 19)
+							)
+						: t
+					: t) || t;
+			return t >= (timeSecs(start_time) || 0) && t <= (timeSecs(end_time) || 0);
+		})
 		.sort((a, b) => (a.arrival_timestamp || 0) - (b.arrival_timestamp || 0));
 
 	const tripIds = [...new Set(stopTimes.map((v) => v.trip_id))];
@@ -78,7 +97,30 @@ export async function getDepartures(
 	const routes: { [route_id: string]: gtfs.Route } = {};
 	for (const id of routeIds) routes[id] = gtfs.getRoutes({ route_id: id })[0];
 
-	const stopIds: string[] = [...new Set(stopTimes.map((v) => v.stop_id || ''))];
+	const _tripUpdates = gtfs.getTripUpdates().filter((v) => tripIds.includes(v.trip_id || ''));
+	const _stopTimeUpdates = gtfs
+		.getStopTimeUpdates()
+		.filter((v) => v.stop_id == stop_id || children.includes(v.stop_id || ''))
+		.filter((v) => tripIds.includes(v.trip_id || ''));
+	const tripUpdates: { [trip_id: string]: gtfs.TripUpdate } = {};
+	for (const update of _tripUpdates) {
+		if (!update.trip_id) continue;
+		tripUpdates[update.trip_id] = update;
+	}
+	const stopTimeUpdates: { [trip_id: string]: gtfs.StopTimeUpdate } = {};
+	for (const update of _stopTimeUpdates) {
+		if (!update.trip_id) continue;
+		stopTimeUpdates[update.trip_id] = update;
+	}
+
+	const stopIds: string[] = [
+		...new Set(
+			stopTimes
+				.map((v) => v.stop_id || '')
+				.concat(_stopTimeUpdates.map((v) => v.stop_id || ''))
+				.filter((v) => v != '')
+		)
+	];
 	const stops: { [stop_id: string]: gtfs.Stop } = {};
 	for (const id of stopIds) stops[id] = gtfs.getStops({ stop_id: id })[0];
 	for (const id of Object.keys(stops))
@@ -111,22 +153,6 @@ export async function getDepartures(
 		const tripStops = tripStopTimes.map((v) => gtfs.getStops({ stop_id: v.stop_id })[0]);
 		const expressInfo = findExpressString(tripStops, stops, stop_id);
 		expressInfos[id] = expressInfo;
-	}
-
-	const _tripUpdates = gtfs.getTripUpdates().filter((v) => tripIds.includes(v.trip_id || ''));
-	const _stopTimeUpdates = gtfs
-		.getStopTimeUpdates()
-		.filter((v) => v.stop_id == stop_id || children.includes(v.stop_id || ''))
-		.filter((v) => tripIds.includes(v.trip_id || ''));
-	const tripUpdates: { [trip_id: string]: gtfs.TripUpdate } = {};
-	for (const update of _tripUpdates) {
-		if (!update.trip_id) continue;
-		tripUpdates[update.trip_id] = update;
-	}
-	const stopTimeUpdates: { [trip_id: string]: gtfs.StopTimeUpdate } = {};
-	for (const update of _stopTimeUpdates) {
-		if (!update.trip_id) continue;
-		stopTimeUpdates[update.trip_id] = update;
 	}
 
 	return { stopTimes, trips, stops, routes, runGurus, expressInfos, tripUpdates, stopTimeUpdates };
