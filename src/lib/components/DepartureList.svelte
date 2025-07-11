@@ -7,6 +7,17 @@
 	export let stops: any;
 	export let expressInfos: any;
 	export let runGurus: any;
+
+	function formatTime(time: string) {
+		console.log(time);
+		if (!time) return '??:??';
+		const [h, m] = time.split(':');
+		let hour = Number.parseInt(h);
+		if (hour >= 24) {
+			hour = hour - 24;
+		}
+		return `${hour.toString().padStart(2, '0')}:${m}`;
+	}
 </script>
 
 <ul>
@@ -16,7 +27,7 @@
 		{@const stop = stops[dep.stop_id || '']}
 		<li>
 			<hr />
-			{(dep.arrival_time || '??:??:??').slice(0, 5)} p{stop.platform_code} -
+			{formatTime(dep.arrival_time)} p{stop.platform_code} -
 			<a href="/trip/{trip.trip_id}">{trip.trip_id.slice(-4)}</a>
 			{route.route_short_name}
 			{(trip.trip_headsign || 'unknown').replace('station', '').trim()}
