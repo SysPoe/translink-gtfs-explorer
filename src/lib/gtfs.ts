@@ -1,7 +1,6 @@
 import * as gtfs from 'gtfs';
 import fs from 'fs';
 import cron from 'node-cron';
-import os from 'os';
 import { DateTime } from 'luxon';
 
 let config = {
@@ -108,6 +107,8 @@ cron.schedule(`0 ${localHour} * * *`, async () => {
 	loaded = false;
 	await loadGTFS(true);
 }, { timezone: tz });
+
+loadGTFS();
 
 export default {
 	loadGTFS,

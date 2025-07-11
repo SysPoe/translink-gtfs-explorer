@@ -4,6 +4,10 @@
 	let today = Number.parseInt(
 		new Date(Date.now() + 60 * 60 * 10 * 1000).toISOString().slice(0, 10).replace(/-/g, '')
 	);
+
+	function round(num: number): number {
+		return num < 0 ? -Math.ceil(-num) : Math.floor(num);
+	}
 </script>
 
 <h2>{data.trip}</h2>
@@ -37,7 +41,7 @@ Long Name: {tripInfo.route.route_long_name}
 				<li>
 					{stopTime.arrival_time}
 					{#if serviceDate == today && tripUpdate != undefined && tripUpdate != null}
-						{@const delay = Math.round((tripUpdate.departure_delay || 0) / 60)}
+						{@const delay = round((tripUpdate.departure_delay || 0) / 60)}
 						<span
 							style="color:{delay >= 5
 								? 'red'
