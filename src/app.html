@@ -4,9 +4,16 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Cascadia+Mono:ital,wght@0,200..700;1,200..700&display=swap"
+			rel="stylesheet"
+		/>
 		<style>
-			body {
-				font-family: 'Courier New', Courier, monospace;
+			* {
+				font-family: 'Cascadia Mono', 'Courier New', Courier, monospace;
+				font-weight: 400;
 			}
 		</style>
 		%sveltekit.head%
@@ -15,7 +22,9 @@
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 	<footer>
-		<span style="font-size: 0.8em; color: gray; position: fixed; bottom: 0; right: 0; padding: 10px;">
+		<span
+			style="font-size: 0.8em; color: gray; position: fixed; bottom: 0; right: 0; padding: 10px"
+		>
 			Farewell EMUs - 1979-2025
 		</span>
 	</footer>
