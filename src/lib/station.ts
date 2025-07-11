@@ -1,7 +1,7 @@
 import tGTFS from './gtfs';
 import * as gtfs from 'gtfs';
 import { timeSecs } from './utils/time';
-import findExpress from './utils/express';
+import { findExpressString } from './utils/express';
 import runGuru from './runGuru';
 
 let trips: gtfs.Trip[];
@@ -109,48 +109,7 @@ export async function getDepartures(
 				stops[stops[id].parent_station] = gtfs.getStops({ stop_id: stops[id].parent_station })[0];
 
 		const tripStops = tripStopTimes.map((v) => gtfs.getStops({ stop_id: v.stop_id })[0]);
-		const expressData = findExpress(tripStops.map((v) => v.parent_station || v.stop_id)).filter(
-			(v) => v.type !== 'local'
-		);
-
-		// Ew. Gross. BTW the function wrapper is so that you can collapse it
-		const expressInfo =
-			expressData.length > 0
-				? (() =>
-						expressData
-							.reduce(
-								(acc, segment, index) => {
-									if (index === 0 || segment.from !== acc[acc.length - 1].to) {
-										acc.push({ from: segment.from, to: segment.to, stoppingAt: [] });
-									} else {
-										acc[acc.length - 1].stoppingAt.push(segment.from);
-										acc[acc.length - 1].to = segment.to;
-									}
-									return acc;
-								},
-								[] as { from: string; to: string; stoppingAt: string[] }[]
-							)
-							.map((run) => {
-								const startName = stops[run.from]?.stop_name?.replace(' station', '');
-								const endName = stops[run.to]?.stop_name?.replace(' station', '');
-								const stoppingAtNames = run.stoppingAt.map((stopId) =>
-									stops[stopId]?.stop_name?.replace(' station', '')
-								);
-								const formattedStoppingAtNames =
-									stoppingAtNames.length <= 1
-										? stoppingAtNames[0]
-										: `${stoppingAtNames.slice(0, -1).join(', ')}, and ${stoppingAtNames[stoppingAtNames.length - 1]}`;
-								return run.from == stops[stop_id].parent_station || run.from == stop_id
-									? run.stoppingAt.length > 0
-										? `Running express to ${endName}, stopping only at ${formattedStoppingAtNames}`
-										: `Running express to ${endName}`
-									: run.stoppingAt.length > 0
-										? `Running express between ${startName} and ${endName}, stopping only at ${formattedStoppingAtNames}`
-										: `Running express between ${startName} and ${endName}`;
-							})
-							.join('; '))()
-				: 'All stops';
-
+		const expressInfo = findExpressString(tripStops, stops, stop_id);
 		expressInfos[id] = expressInfo;
 	}
 
