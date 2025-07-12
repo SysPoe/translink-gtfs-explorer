@@ -13,7 +13,9 @@ let stopTimes: gtfs.StopTime[];
 // exhsta -> nothing, cuz exhibition doesn't exist
 // slysta -> nothing, apparently salisbury doesn't exist
 // tensta -> nothing, tennyson doesn't exist
-let qr_stations: string[] = JSON.parse('["place_ascsta","place_aldsta","place_aucsta","place_albsta","place_altsta","place_birsta","place_balsta","place_domsta","place_bunsta","place_bbrsta","place_binsta","place_bowsta","place_intsta","place_censta","place_beesta","place_bvlsta","place_brasta","place_bursta","place_bansta","place_baysta","place_forsta","place_brdsta","place_betsta","place_bwrsta","place_bdlsta","place_cabstn","place_cassta","place_cppsta","place_chesta","place_cansta","place_crysta","place_crnsta","place_corsta","place_coosta","place_clesta","place_cmrstn","place_clasta","place_darsta","place_dbnsta","place_deasta","place_dinsta","place_daksta","place_dupsta","place_ebbsta","place_edesta","place_enosta","place_egjsta","place_eassta","place_elmsta","place_eudsta","place_eumsta","place_exhsta","place_faista","place_frusta","place_fersta","place_gaista","place_gaysta","place_goosta","place_geesta","place_grosta","place_gmtsta","place_grasta","place_gymsta","place_hensta","place_helsta","place_hemsta","place_holsta","place_indsta","place_ipssta","place_kepsta","place_kalsta","place_kgtsta","place_kprsta","place_karsta","place_kursta","place_linsta","place_logsta","place_lotsta","place_lansta","place_lawsta","place_mhesta","place_mahsta","place_mgssta","place_mitsta","place_mursta","place_mansta","place_molsta","place_moosta","place_mudsta","place_milsta","place_myesta","place_nobsta","place_namsta","place_nunsta","place_npksta","place_narsta","place_nrgsta","place_norsta","place_nudsta","place_newsta","place_omesta","place_ormsta","place_oxlsta","place_oxfsta","place_palsta","place_petsta","place_parsta","place_pomsta","place_redsta","place_ricsta","place_rocsta","place_rbnsta","place_romsta","place_rossta","place_runsta","place_rivsta","place_rotsta","place_sbasta","place_sousta","place_spcsta","place_sprsta","place_sgtsta","place_shnsta","place_shesta","place_slysta","place_strsta","place_snssta","place_sunsta","place_thasta","place_tomsta","place_trista","place_thmsta","place_tarsta","place_thosta","place_tensta","place_trvsta","place_twgsta","place_virsta","place_varsta","place_wacsta","place_winsta","place_wilsta","place_wynsta","place_wnmsta","place_wbysta","place_wdrsta","place_walsta","place_welsta","place_wulsta","place_wolsta","place_wyhsta","place_yansta","place_yeesta","place_yersta","place_zllsta"]');
+let qr_stations: string[] = JSON.parse(
+	'["place_ascsta","place_aldsta","place_aucsta","place_albsta","place_altsta","place_birsta","place_balsta","place_domsta","place_bunsta","place_bbrsta","place_binsta","place_bowsta","place_intsta","place_censta","place_beesta","place_bvlsta","place_brasta","place_bursta","place_bansta","place_baysta","place_forsta","place_brdsta","place_betsta","place_bwrsta","place_bdlsta","place_cabstn","place_cassta","place_cppsta","place_chesta","place_cansta","place_crysta","place_crnsta","place_corsta","place_coosta","place_clesta","place_cmrstn","place_clasta","place_darsta","place_dbnsta","place_deasta","place_dinsta","place_daksta","place_dupsta","place_ebbsta","place_edesta","place_enosta","place_egjsta","place_eassta","place_elmsta","place_eudsta","place_eumsta","place_exhsta","place_faista","place_frusta","place_fersta","place_gaista","place_gaysta","place_goosta","place_geesta","place_grosta","place_gmtsta","place_grasta","place_gymsta","place_hensta","place_helsta","place_hemsta","place_holsta","place_indsta","place_ipssta","place_kepsta","place_kalsta","place_kgtsta","place_kprsta","place_karsta","place_kursta","place_linsta","place_logsta","place_lotsta","place_lansta","place_lawsta","place_mhesta","place_mahsta","place_mgssta","place_mitsta","place_mursta","place_mansta","place_molsta","place_moosta","place_mudsta","place_milsta","place_myesta","place_nobsta","place_namsta","place_nunsta","place_npksta","place_narsta","place_nrgsta","place_norsta","place_nudsta","place_newsta","place_omesta","place_ormsta","place_oxlsta","place_oxfsta","place_palsta","place_petsta","place_parsta","place_pomsta","place_redsta","place_ricsta","place_rocsta","place_rbnsta","place_romsta","place_rossta","place_runsta","place_rivsta","place_rotsta","place_sbasta","place_sousta","place_spcsta","place_sprsta","place_sgtsta","place_shnsta","place_shesta","place_slysta","place_strsta","place_snssta","place_sunsta","place_thasta","place_tomsta","place_trista","place_thmsta","place_tarsta","place_thosta","place_tensta","place_trvsta","place_twgsta","place_virsta","place_varsta","place_wacsta","place_winsta","place_wilsta","place_wynsta","place_wnmsta","place_wbysta","place_wdrsta","place_walsta","place_welsta","place_wulsta","place_wolsta","place_wyhsta","place_yansta","place_yeesta","place_yersta","place_zllsta"]'
+);
 
 async function loadData() {
 	if (trips != undefined && stopTimes != undefined) return;
@@ -113,6 +115,28 @@ export async function getDepartures(
 	for (const update of _stopTimeUpdates) {
 		if (!update.trip_id) continue;
 		stopTimeUpdates[update.trip_id] = update;
+	}
+
+	for (const trip_id of tripIds) {
+		if (stopTimeUpdates[trip_id]) continue;
+		const stopTime = stopTimes.find((v) => v.trip_id === trip_id);
+		const sequence = stopTime?.stop_sequence || 0;
+
+		let updates = gtfs.getStopTimeUpdates({ trip_id });
+
+		updates = updates.filter((v) => (v.stop_sequence || Number.POSITIVE_INFINITY) < sequence);
+		updates = updates.sort(
+			(a, b) =>
+				(a.stop_sequence || Number.POSITIVE_INFINITY) -
+				(b.stop_sequence || Number.POSITIVE_INFINITY)
+		);
+		if (updates.at(-1) == undefined) continue;
+		stopTimeUpdates[trip_id] = updates.at(-1) as gtfs.StopTimeUpdate;
+		stopTimeUpdates[trip_id].stop_id = undefined;
+		if (stopTime?.departure_timestamp && stopTimeUpdates[trip_id].departure_delay)
+			stopTimeUpdates[trip_id].departure_timestamp =
+				stopTime?.departure_timestamp + stopTimeUpdates[trip_id].departure_delay;
+		else stopTimeUpdates[trip_id].departure_timestamp = stopTime?.departure_timestamp;
 	}
 
 	const stopIds: string[] = [
