@@ -1,4 +1,4 @@
-let data: {
+export let guruData: {
 	first: { [key: string]: string };
 	second: { [key: string]: string };
 } = {
@@ -30,7 +30,7 @@ let data: {
 		D: 'Darra via Toowong',
 		E: 'Ferny Grove line',
 		F: 'Various destinations as determined by Control',
-		G: 'Beyond Beenleigh to Robina',
+		G: 'Beyond Beenleigh to Varsity Lakes',
 		H: 'Cannon Hill or beyond towards Cleveland',
 		K: 'Springfield',
 		L: 'between Nambour and Yandina',
@@ -56,8 +56,8 @@ export default function runGuru(trainNumber: string) {
 	const firstChar = trainNumber[0];
 	const secondChar = trainNumber[1];
 
-	const first: string = data.first[firstChar];
-	const second: string = data.second[secondChar];
+	const first: string = guruData.first[firstChar];
+	const second: string = guruData.second[secondChar];
 
 	return `${first} heading ${second ? (second.includes(' to ') || /^(beyond|from|between)/.test(second) ? '' : 'to') : 'to'} ${second}.`;
 }
