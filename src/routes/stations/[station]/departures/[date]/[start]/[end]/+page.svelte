@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { routeAttributes } from 'gtfs/models';
 	import DepartureList from '$lib/components/DepartureList.svelte';
 
 	let { data } = $props();
