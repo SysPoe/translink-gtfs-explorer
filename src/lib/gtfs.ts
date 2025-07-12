@@ -37,7 +37,7 @@ let doSync =
 
 if (doSync) {
 	fs.writeFileSync('./lastSynced', new Date().toISOString().split('T')[0]);
-	fs.rmSync('./db.sqlite');
+	if (fs.existsSync('./db.sqlite')) fs.rmSync('./db.sqlite');
 }
 
 if (fs.existsSync('./db.sqlite')) {
@@ -47,15 +47,21 @@ if (fs.existsSync('./db.sqlite')) {
 	config.db = db;
 }
 
-export async function loadGTFS(bypass = false) {
+export async function loadGTFS(bypass = false, doubleBypass = false) {
 	if (loaded && !bypass) return;
 	loaded = true;
-	if (doSync) {
-		console.log('doSync', doSync);
+	if (doSync || doubleBypass || !fs.existsSync('./db.sqlite')) {
 		await gtfs.importGtfs(config);
+		fs.writeFileSync('./lastSynced', new Date().toISOString().split('T')[0]);
 	}
-	await gtfs.updateGtfsRealtime(config);
-	setInterval(updateRealtime, 60 * 1000)
+	try {
+		await gtfs.updateGtfsRealtime(config);
+	} catch (e) {
+		await gtfs.importGtfs(config);
+		await gtfs.updateGtfsRealtime(config);
+	}
+	setInterval(updateRealtime, 60 * 1000);
+
 	if (gtfs.getStops().length == 0) await gtfs.importGtfs(config);
 }
 
@@ -102,11 +108,15 @@ const localHour = getLocalHourForUTCPlus10(3);
 console.log(`Scheduling GTFS refresh at local hour ${localHour} to match 3am UTC+10`);
 
 // Schedule at calculated local hour
-cron.schedule(`0 ${localHour} * * *`, async () => {
-	console.log('Scheduled GTFS refresh to match 3am UTC+10');
-	loaded = false;
-	await loadGTFS(true);
-}, { timezone: tz });
+cron.schedule(
+	`0 ${localHour} * * *`,
+	async () => {
+		console.log('Scheduled GTFS refresh to match 3am UTC+10');
+		loaded = false;
+		await loadGTFS(true, true);
+	},
+	{ timezone: tz }
+);
 
 loadGTFS();
 
