@@ -1,5 +1,5 @@
 <script>
-    export let data../../alerts/$types.js;
+    export let data;
 </script>
 
 <h1>Service Alerts</h1>
