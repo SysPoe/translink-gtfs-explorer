@@ -130,7 +130,7 @@
 			<div class="info-column">
 				{expressInfos[dep.trip_id]}
 				<br />
-				<i>RunGuru says {trip.trip_id.slice(-4)} is a {runGurus[dep.trip_id]}</i>
+				<i>RunGuru says <q>{trip.trip_id.slice(-4)} is a {runGurus[dep.trip_id]}</q></i>
 			</div>
 		</div>
 	</div>

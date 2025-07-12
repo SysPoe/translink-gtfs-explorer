@@ -154,7 +154,7 @@ export async function getDepartures(
 			stops[stops[id].parent_station] = gtfs.getStops({ stop_id: stops[id].parent_station })[0];
 
 	const runGurus: { [trip_id: string]: string } = {};
-	for (const id of tripIds) runGurus[id] = runGuru(id.slice(-4));
+	for (const id of tripIds) runGurus[id] = runGuru(id.slice(-4), false);
 
 	const expressInfos: { [trip_id: string]: string } = {};
 	for (const id of tripIds) {

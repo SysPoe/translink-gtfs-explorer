@@ -47,7 +47,7 @@ export let guruData: {
 	}
 };
 
-export default function runGuru(trainNumber: string) {
+export default function runGuru(trainNumber: string, includeDestination: boolean = true): string {
 	if (trainNumber.length !== 4) {
 		return 'Invalid train number. It must be 4 characters long.';
 	}
@@ -59,5 +59,7 @@ export default function runGuru(trainNumber: string) {
 	const first: string = guruData.first[firstChar];
 	const second: string = guruData.second[secondChar];
 
-	return `${first} heading ${second ? (second.includes(' to ') || /^(beyond|from|between)/.test(second) ? '' : 'to') : 'to'} ${second}.`;
+	return includeDestination
+		? `${first} heading ${second ? (second.includes(' to ') || /^(beyond|from|between)/.test(second) ? '' : 'to') : 'to'} ${second}.`
+		: first;
 }
