@@ -133,10 +133,17 @@ export async function getDepartures(
 		if (updates.at(-1) == undefined) continue;
 		stopTimeUpdates[trip_id] = updates.at(-1) as gtfs.StopTimeUpdate;
 		stopTimeUpdates[trip_id].stop_id = undefined;
-		if (stopTime?.departure_timestamp && stopTimeUpdates[trip_id].departure_delay)
+		if (stopTimeUpdates[trip_id].departure_delay)
 			stopTimeUpdates[trip_id].departure_timestamp =
-				stopTime?.departure_timestamp + stopTimeUpdates[trip_id].departure_delay;
-		else stopTimeUpdates[trip_id].departure_timestamp = stopTime?.departure_timestamp;
+				new Date(new Date().toISOString().slice(0, 11) + '00:00:00.000Z').getTime() / 1000 +
+				(stopTime?.departure_timestamp || 0) -
+				36_000 +
+				stopTimeUpdates[trip_id].departure_delay;
+		else
+			stopTimeUpdates[trip_id].departure_timestamp =
+				new Date(new Date().toISOString().slice(0, 11) + '00:00:00.000Z').getTime() / 1000 +
+				(stopTime?.departure_timestamp || 0) -
+				36_000;
 	}
 
 	const stopIds: string[] = [
