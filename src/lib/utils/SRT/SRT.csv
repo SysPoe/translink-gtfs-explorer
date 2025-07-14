@@ -28,8 +28,8 @@ Burpengary,Morayfield,3
 Morayfield,Caboolture,3
 Caboolture,Elimbah,6
 Elimbah,Beerburrum,4
-Beerburrum,Glasshouse Mountains,6
-Glasshouse Mountains,Beerwah,3
+Beerburrum,Glass House Mountains,6
+Glass House Mountains,Beerwah,3
 Beerwah,Landsborough,5
 Landsborough,Mooloolah,5
 Mooloolah,Eudlo,6
@@ -87,8 +87,7 @@ Thomas Street,Wulkuraka,2
 Wulkuraka,Karrabin,2
 Karrabin,Walloon,3
 Walloon,Thagoona,3
-Thagoona,Yarrowlea,3
-Yarrowlea,Rosewood,1
+Thagoona,Rosewood,4
 Roma Street,South Brisbane,4
 South Brisbane,South Bank,1
 South Bank,Park Road,1
@@ -100,6 +99,7 @@ Yeerongpilly,Moorooka,1
 Moorooka,Rocklea,2
 Rocklea,Salisbury,1
 Salisbury,Coopers Plains,2
+Rocklea,Coopers Plains,3
 Coopers Plains,Banoon,1
 Banoon,Sunnybank,1
 Sunnybank,Altandi,1
@@ -111,8 +111,8 @@ Trinder Park,Woodridge,1
 Woodridge,Kingston,2
 Kingston,Loganlea,1
 Loganlea,Bethania,2
-Bethania,Eden's Landing,1
-Eden's Landing,Holmview,1
+Bethania,Edens Landing,1
+Edens Landing,Holmview,1
 Holmview,Beenleigh,2
 Beenleigh,Ormeau,7
 Ormeau,Coomera,5
@@ -127,8 +127,7 @@ Morningside,Cannon Hill,1
 Cannon Hill,Murarrie,1
 Murarrie,Hemmant,2
 Hemmant,Lindum,2
-Lindum,Lytton Junction,1
-Lytton Junction,Wynnum North,1
+Lindum,Wynnum North,2
 Wynnum North,Wynnum,2
 Wynnum,Wynnum Central,2
 Wynnum Central,Manly,2

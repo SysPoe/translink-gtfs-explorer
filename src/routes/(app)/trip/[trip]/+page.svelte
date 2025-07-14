@@ -43,6 +43,12 @@ Long Name: {tripInfo.route.route_long_name}
 					(v) => v.stop_sequence == stopTime.stop_sequence
 				)}
 				<li>
+					{#if stopTime._passing}
+						<span class="passing">
+							{new Date((stopTime.departure_timestamp || 0) * 1000).toISOString().slice(11, 19)}
+							- <a href="/stations/{stopTime.stop_id}">{stopTime.stop_id?.slice(6,9).toUpperCase()}?</a> ({stopTime.stop.stop_name}) (PASSING)*
+						</span>
+					{:else}
 					{stopTime.arrival_time}
 					{#if serviceDate == today && tripUpdate != undefined && tripUpdate != null}
 						{@const delay = round((tripUpdate.departure_delay || 0) / 60)}
@@ -85,8 +91,21 @@ Long Name: {tripInfo.route.route_long_name}
 						</a>
 						({stopTime.parent.stop_name} p{stopTime.stop.platform_code})
 					{/if}
+					{/if}
 				</li>
 			{/each}
 		</ul>
 	</div>
 {/each}
+
+<div class="footer">
+	* Passing stops are stops that the trip does not stop at, but passes by. They are not part of the trip's schedule and are estimated based on sectional run times.
+</div>
+
+<style>
+	.passing,.passing *{
+		color: rgb(66, 66, 66);
+		font-style: italic;
+		font-size: 0.9em;
+	}
+</style>

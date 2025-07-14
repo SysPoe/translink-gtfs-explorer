@@ -1,5 +1,9 @@
 // Sectional Running Times data for QR's rail network
 
+import { loadGTFS } from '$lib/gtfs';
+import { getStations } from '$lib/station';
+import { getStops } from 'gtfs';
+
 let rawSRT = `From,To,EMU
 Roma Street,Exhibition,5
 Exhibition,Fortitude Valley,3
@@ -30,8 +34,8 @@ Burpengary,Morayfield,3
 Morayfield,Caboolture,3
 Caboolture,Elimbah,6
 Elimbah,Beerburrum,4
-Beerburrum,Glasshouse Mountains,6
-Glasshouse Mountains,Beerwah,3
+Beerburrum,Glass House Mountains,6
+Glass House Mountains,Beerwah,3
 Beerwah,Landsborough,5
 Landsborough,Mooloolah,5
 Mooloolah,Eudlo,6
@@ -89,8 +93,7 @@ Thomas Street,Wulkuraka,2
 Wulkuraka,Karrabin,2
 Karrabin,Walloon,3
 Walloon,Thagoona,3
-Thagoona,Yarrowlea,3
-Yarrowlea,Rosewood,1
+Thagoona,Rosewood,4
 Roma Street,South Brisbane,4
 South Brisbane,South Bank,1
 South Bank,Park Road,1
@@ -102,6 +105,7 @@ Yeerongpilly,Moorooka,1
 Moorooka,Rocklea,2
 Rocklea,Salisbury,1
 Salisbury,Coopers Plains,2
+Rocklea,Coopers Plains,3
 Coopers Plains,Banoon,1
 Banoon,Sunnybank,1
 Sunnybank,Altandi,1
@@ -113,8 +117,8 @@ Trinder Park,Woodridge,1
 Woodridge,Kingston,2
 Kingston,Loganlea,1
 Loganlea,Bethania,2
-Bethania,Eden's Landing,1
-Eden's Landing,Holmview,1
+Bethania,Edens Landing,1
+Edens Landing,Holmview,1
 Holmview,Beenleigh,2
 Beenleigh,Ormeau,7
 Ormeau,Coomera,5
@@ -129,8 +133,7 @@ Morningside,Cannon Hill,1
 Cannon Hill,Murarrie,1
 Murarrie,Hemmant,2
 Hemmant,Lindum,2
-Lindum,Lytton Junction,1
-Lytton Junction,Wynnum North,1
+Lindum,Wynnum North,2
 Wynnum North,Wynnum,2
 Wynnum,Wynnum Central,2
 Wynnum Central,Manly,2
@@ -139,20 +142,55 @@ Lota,Thorneside,1
 Thorneside,Birkdale,2
 Birkdale,Wellington Point,2
 Wellington Point,Ormiston,1
-Ormiston,Cleveland,2`
+Ormiston,Cleveland,2`;
 
-function parseSRTtoMatrix(srtString: string): Record<string, Record<string, number>> {
-    const lines = srtString.trim().split('\n');
-    const startIdx = lines[0].startsWith('From,To,EMU') ? 1 : 0;
-    const matrix: Record<string, Record<string, number>> = {};
+export type SRTMatrix = {
+	[from: string]: {
+		[to: string]: number;
+	};
+};
 
-    for (let i = startIdx; i < lines.length; i++) {
-        const [from, to, emu] = lines[i].split(',');
-        if (!matrix[from]) matrix[from] = {};
-        matrix[from][to] = Number(emu);
-    }
-    return matrix;
+async function parseSRTtoMatrix(srtString: string): Promise<SRTMatrix> {
+	const stations = await getStations();
+
+	const lines = srtString.trim().split('\n');
+	const startIdx = lines[0].startsWith('From,To,EMU') ? 1 : 0;
+	const matrix: SRTMatrix = {};
+
+	for (let i = startIdx; i < lines.length; i++) {
+		let [from, to, emu] = lines[i].split(',');
+
+		// @ts-expect-error
+		from = stations.find((v) => v.stop_name?.toLowerCase().startsWith(from.toLowerCase()))?.stop_id;
+		// @ts-expect-error
+		to = stations.find((v) => v.stop_name?.toLowerCase().startsWith(to.toLowerCase()))?.stop_id;
+
+		if (!from) {
+			console.error(`Invalid SRT from: ${lines[i]}`);
+			continue;
+		}
+		if (!to) {
+			console.error(`Invalid SRT to: ${lines[i]}`);
+			continue;
+		}
+
+		if (!matrix[from]) matrix[from] = {};
+		matrix[from][to] = Number(emu);
+	}
+	return matrix;
 }
 
-export const SRTMatrix = parseSRTtoMatrix(rawSRT);
-export default SRTMatrix;
+let _matrix: SRTMatrix;
+
+async function getSRTMatrix() {
+	if (!_matrix) {
+		// if(true){
+		_matrix = await parseSRTtoMatrix(rawSRT);
+	}
+	return _matrix;
+}
+
+export async function getSRT(from: string, to: string): Promise<number | undefined> {
+	let matrix = await getSRTMatrix();
+	return matrix[from]?.[to] || matrix[to]?.[from];
+}
