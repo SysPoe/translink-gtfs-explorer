@@ -27,6 +27,10 @@
 	});
 </script>
 
+<svelte:head>
+  <title>Live Departures for {info.stop_name || info.stop_id} - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h1>
 	Live Departures for
 	{#if info.stop_id}

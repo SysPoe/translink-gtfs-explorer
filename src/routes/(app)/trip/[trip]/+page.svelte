@@ -10,6 +10,10 @@
 	}
 </script>
 
+<svelte:head>
+  <title>Trip {data.trip} - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h2>{data.trip}</h2>
 
 <h3>Trip Info</h3>

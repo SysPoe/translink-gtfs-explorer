@@ -14,6 +14,10 @@
 	};
 </script>
 
+<svelte:head>
+  <title>Station {data.station} - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h1>
 	{@html or(info.stop_name)}
 	<a href="/stations/{data.station}/departures/live"><img src={dep} width="25px" height="25px" /></a>

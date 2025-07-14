@@ -14,6 +14,10 @@
 	}
 </script>
 
+<svelte:head>
+  <title>Run {data.run} - Translink GTFS Explorer</title>
+</svelte:head>
+
 {#if data.runDates != undefined && Object.keys(data.runDates).length > 0 && Object.keys(data.runDates).filter((v) => data.runDates[v] == undefined).length == 0}
 	<h2>{data.run}</h2>
 

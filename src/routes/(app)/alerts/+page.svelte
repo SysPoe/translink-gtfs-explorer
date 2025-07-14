@@ -2,6 +2,10 @@
     export let data;
 </script>
 
+<svelte:head>
+  <title>Service Alerts - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h1>Service Alerts</h1>
 
 {#if data.alerts.length > 0}

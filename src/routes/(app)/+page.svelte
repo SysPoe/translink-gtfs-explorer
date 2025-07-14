@@ -8,6 +8,10 @@
 
 </script>
 
+<svelte:head>
+  <title>Home - Translink GTFS Explorer</title>
+</svelte:head>
+
 <a href="/stations/">Browse stations</a><br />
 <a href="/alerts/">Browse alerts</a><br />
 <a href="/search/runs/">Search runs</a><br />

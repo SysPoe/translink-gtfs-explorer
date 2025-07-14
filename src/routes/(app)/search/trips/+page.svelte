@@ -25,6 +25,10 @@
 	}
 </script>
 
+<svelte:head>
+  <title>Search Trips - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h2>Search Trips</h2>
 
 <div id="search-box">

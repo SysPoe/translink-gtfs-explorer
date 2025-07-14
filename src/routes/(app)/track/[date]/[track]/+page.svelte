@@ -2,6 +2,10 @@
 	let { data } = $props();
 </script>
 
+<svelte:head>
+  <title>Track {data.track} on {data.date} - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h2>Track {data.track} on {data.date}</h2>
 <ul>
 	{#each data.trackInfo.filter((v) => v.type == 'run') as trackTime}

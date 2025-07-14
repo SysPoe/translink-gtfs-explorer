@@ -11,6 +11,10 @@
 	};
 </script>
 
+<svelte:head>
+  <title>Browse Stations - Translink GTFS Explorer</title>
+</svelte:head>
+
 <h1>Browse Stations</h1>
 <ul>
 	{#each stations as st}
